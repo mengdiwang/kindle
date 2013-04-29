@@ -1,6 +1,6 @@
 <?php
 //加载RSS解析文件
-require 'F:\Server\htdocs\simplepie\simplepie.inc';
+require './lib/simplepie/simplepie.inc';
 set_time_limit(300);
 
 //数据库连接

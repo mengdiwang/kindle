@@ -5,7 +5,7 @@ if(isset($_SESSION['user'])){
 }else{
     header('Location: index.php');
 }
-require 'F:\Server\htdocs\simplepie\simplepie.inc';
+require './lib/simplepie/simplepie.inc';
 
 class DBCxn{
     public static $dsn = 'mysql:host=localhost;dbname=webrss';

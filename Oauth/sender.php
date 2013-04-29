@@ -1,7 +1,7 @@
 <?php
 require_once 'src/apiClient.php';
 require_once 'src/contrib/apiPlusService.php';
-include("..\\register\mailMobi.php");
+include("../register/mailMobi.php");
 
 set_time_limit(300);
 session_start();
@@ -9,7 +9,7 @@ session_start();
 if(isset($_SESSION['user'])){
     $user = $_SESSION['user'];
 }else{
-    header('Location: ..\index.php');
+    header('Location: ../index.php');
     exit;
 }
 //构建请求
@@ -69,7 +69,7 @@ HTML;
 
 $html = chr(0xEF).chr(0xBB).chr(0xBF).$html;
 //生成临时文件
-$file = '..\tmp\\'.$user.'.html';
+$file = '../tmp/'.$user.'.html';
 $fh = fopen($file, 'wb');
 fputs($fh, $html);
 fclose($fh);
