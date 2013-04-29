@@ -543,7 +543,7 @@ $("#addRSS button").bind("click",function(){
     $("div#loading p").text("正在检测RSS源……");
     $("div#delete").css("display","block");
     $("div#loading").css("display","block");
-    $.post("loadInfo.php",{feed:feed},function(html){
+    $.post("loadInfo.php",{feed:feed},function(html){//TODO
         var result = html.result;
         if(result == "error" ){
             $("div#loading p").css("color","red");

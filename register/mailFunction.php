@@ -2,27 +2,7 @@
 header('Content-Type: text/html; charset=utf-8');
 include("class.phpmailer.php");
 include("class.smtp.php"); 
-//数据库连接
-class DBCxn{
-    public static $dsn = 'mysql:host=localhost;dbname=webrss';
-    public static $user = 'root';
-    public static $pass = '1q2w3e';
-    //保存连接的内部变量
-    private static $db;
-    //不能克隆和技巧化
-    final private function __construct(){}
-    final private function __clone(){}
-    
-    public static function get(){
-        if(is_null(self::$db)){
-            self::$db = new PDO(self::$dsn, self::$user, self::$pass);
-        }
-        //返回连接
-        self::$db->query('set names utf8');
-        return self::$db;
-    }
-}
-
+include("../dbo.php");
 
 function postmail_jiucool_com($to,$subject = "",$body = ""){
     //$to 表示收件人地址 $subject 表示邮件标题 $body表示邮件正文
@@ -58,6 +38,13 @@ function postmail_jiucool_com($to,$subject = "",$body = ""){
     }
 }
 
+function get_Datetime_Now() {
+    $tz_object = new DateTimeZone('PRC');
+    //date_default_timezone_set('Brazil/East'); 
+    $datetime = new DateTime();
+    $datetime->setTimezone($tz_object);     
+	return $datetime->format('Y\-m\-d\ h:i:s');
+}
 
 //发送邮件前的数据库更新
 function sendMail($user,$email,$pass){
@@ -69,10 +56,17 @@ function sendMail($user,$email,$pass){
         $verify_string .= $str[mt_rand(0,58)];
     }
     //在这里应该验证用户名是否存在
-    $st = $db->prepare("INSERT INTO users (userName,pwd,email,registerOn,verifed,verifyStr)
-     VALUES (?,?,?,NOW(),0,?)");
-    $st->execute(array($user,$pass,$email,$verify_string));
-    //这里应该发送邮件，并且包含字符串
+	$regtime=get_Datetime_Now();
+	
+    $st = $db->prepare("INSERT INTO users (userName,pwd,email,registerOn,verified,verifyStr)
+     VALUES (?,?,?,$regtime,0,?)");
+
+	 echo "INSERT INTO users (userName,pwd,email,registerOn,verified,verifyStr) VALUES ('$user','$pass','$email', '$regtime',0,'$verify_string') <br/>"; 
+
+    $count = $st->execute(array($user,$pass,$email,$verify_string));
+    echo "$count has inserted </br>";
+	
+	//这里应该发送邮件，并且包含字符串
     $body = '<!DOCTYPE HTML>
     <style type="text/css">
     #letter{width:600px;}#header{height:82px;}#header span{font-size:22px;color:white;font-weight:900;}#top{top:10px;left:100px;}#content{border:1px solid #CCC;}#entry,#footer{border-radius:5px;padding:15px 30px 10px 30px;}p{word-wrap:break-word;}p a{color:red;font-weight:bold;}
@@ -97,7 +91,7 @@ function sendMail($user,$email,$pass){
             </div>
         </div>
     </div>';
-    postmail_jiucool_com($email,$subject = "感谢您注册Kindle阅读，请激活您的账户",$body);
+    //postmail_jiucool_com($email,$subject = "感谢您注册Kindle阅读，请激活您的账户",$body);
     
     return true;
 }
@@ -105,7 +99,7 @@ function sendMail($user,$email,$pass){
 //验证更新
 function verifyUser($verifyStr){
     $db = DBCxn::get();
-    $st = $db->prepare('UPDATE users SET verifed=1 WHERE verifyStr=?');
+    $st = $db->prepare('UPDATE users SET verified=1 WHERE verifyStr=?');
     $st->execute(array($verifyStr));
     $rowCount = $st->rowCount();//查询影响行
     if($rowCount == 1){

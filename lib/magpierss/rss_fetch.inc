@@ -16,8 +16,8 @@
  *
  */
  
- define('MAGPIE_OUTPUT_ENCODING','UTF-8');
- define('MAGPIE_INPUT_ENCODING','UTF-8');
+define('MAGPIE_OUTPUT_ENCODING','UTF-8');
+define('MAGPIE_INPUT_ENCODING','UTF-8');
 // Setup MAGPIE_DIR for use on hosts that don't include
 // the current path in include_path.
 // with thanks to rajiv and smarty
