@@ -7,7 +7,7 @@ set_time_limit(300);
 class DBCxn{
     public static $dsn = 'mysql:host=localhost;dbname=webrss';
     public static $user = 'root';
-    public static $pass = 'root';
+    public static $pass = '1q2w3e';
     //保存连接的内部变量
     private static $db;
     //不能克隆和技巧化

@@ -1,5 +1,7 @@
 <!DOCTYPE HTML>
-<html lang="en-US">
+<!--html lang="en-US"-->
+<html lang="zh-CN">
+
 <head>
 <meta charset="UTF-8">
 <title>Web 阅读器</title>
@@ -36,12 +38,17 @@ a{
 <?php
 //error_reporting(0);
 require './lib/magpierss/rss_fetch.inc';
-$feed = "http://pipes.yahoo.com/pipes/pipe.run?_id=0e10b126a7255a3b48d5b3b3091016d1&_render=rss";
+$feed =//"http://feeds.abcnews.com/abcnews/healthheadlines";
+"http://pipes.yahoo.com/pipes/pipe.run?_id=0e10b126a7255a3b48d5b3b3091016d1&_render=rss";
 $rss = fetch_rss($feed);
-$header= $rss->channel;
 
-echo '<div id="header"><h1>'.$header['title'].'</h1></div>';
-foreach($rss->items as $item){
+if($rss!=false)
+{
+	$header= $rss->channel;
+	echo '<div id="header"><h1>'.$header['title'].'</h1></div>';
+
+	
+	foreach($rss->items as $item){
 ?>
     <div class="title">
         <h3><a href="<?php echo $item['link']  ?>"><?php echo $item['title'] ?></a></h3>
@@ -53,8 +60,10 @@ foreach($rss->items as $item){
             if(isset($item['description'])){
                 echo $item['description'];
             } else{
-    continue;
-}   ?>
+    	continue;
+	}
+}   
+?>
 		</div>
     </div>
     <hr />

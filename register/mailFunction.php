@@ -6,7 +6,7 @@ include("class.smtp.php");
 class DBCxn{
     public static $dsn = 'mysql:host=localhost;dbname=webrss';
     public static $user = 'root';
-    public static $pass = 'root';
+    public static $pass = '1q2w3e';
     //保存连接的内部变量
     private static $db;
     //不能克隆和技巧化
@@ -87,7 +87,7 @@ function sendMail($user,$email,$pass){
             <p>您好，欢迎来到kindle阅读在线版，这是一个简单易用的web阅读平台，在这里你会轻松享受阅读的乐趣！</p>
             <p>请点击<a href="">这里</a>的链接完成注册</p>
             <p>如果上面链接无法点击，请复制下面的链接到你的浏览器的地址栏完成注册：</p>
-            <p>http://localhost/register/activeuser.php?verifyStr='.$verify_string.'</p>
+            <p>http://localhost/kindle/register/activeuser.php?verifyStr='.$verify_string.'</p>
             <p>请注意，如果您错误地收到了此电子邮件，请忽略这封邮件！此账户将不会启动。</p>
             </div>
             <div id="footer">
