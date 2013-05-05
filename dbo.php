@@ -25,4 +25,12 @@ class DBCxn{
 		return self::$db;
     }
 }
+
+function my_get_Datetime_Now() {
+    $tz_object = new DateTimeZone('PRC');
+    //date_default_timezone_set('Brazil/East'); 
+    $datetime = new DateTime();
+    $datetime->setTimezone($tz_object);     
+	return $datetime->format('Y\-m\-d\ h:i:s');
+}
 ?>

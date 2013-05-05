@@ -38,14 +38,6 @@ function postmail_jiucool_com($to,$subject = "",$body = ""){
     }
 }
 
-function get_Datetime_Now() {
-    $tz_object = new DateTimeZone('PRC');
-    //date_default_timezone_set('Brazil/East'); 
-    $datetime = new DateTime();
-    $datetime->setTimezone($tz_object);     
-	return $datetime->format('Y\-m\-d\ h:i:s');
-}
-
 //发送邮件前的数据库更新
 function sendMail($user,$email,$pass){
     $db = DBCxn::get();
@@ -56,15 +48,16 @@ function sendMail($user,$email,$pass){
         $verify_string .= $str[mt_rand(0,58)];
     }
     //在这里应该验证用户名是否存在
-	$regtime=get_Datetime_Now();
+	$regtime=my_get_Datetime_Now();
 	
-    $st = $db->prepare("INSERT INTO users (userName,pwd,email,registerOn,verified,verifyStr)
-     VALUES (?,?,?,$regtime,0,?)");
+	$stmt = $db->prepare("INSERT INTO users (userName,pwd,email,registerOn, verified, verifyStr) VALUES (:userName,:pass,:email, :registerOn, 0,:verify_string)");
+	$stmt->bindParam(':registerOn', $regtime, PDO::PARAM_STR);
+	$stmt->bindParam(':userName', $user);
+	$stmt->bindParam(':pass', $pass);
+	$stmt->bindParam(':email', $email);
+	$stmt->bindParam(':verify_string', $verify_string);
+	$count = $stmt->execute();
 
-	 echo "INSERT INTO users (userName,pwd,email,registerOn,verified,verifyStr) VALUES ('$user','$pass','$email', '$regtime',0,'$verify_string') <br/>"; 
-
-    $count = $st->execute(array($user,$pass,$email,$verify_string));
-    echo "$count has inserted </br>";
 	
 	//这里应该发送邮件，并且包含字符串
     $body = '<!DOCTYPE HTML>
@@ -91,7 +84,7 @@ function sendMail($user,$email,$pass){
             </div>
         </div>
     </div>';
-    //postmail_jiucool_com($email,$subject = "感谢您注册Kindle阅读，请激活您的账户",$body);
+    postmail_jiucool_com($email,$subject = "感谢您注册Kindle阅读，请激活您的账户",$body);
     
     return true;
 }
@@ -99,8 +92,9 @@ function sendMail($user,$email,$pass){
 //验证更新
 function verifyUser($verifyStr){
     $db = DBCxn::get();
-    $st = $db->prepare('UPDATE users SET verified=1 WHERE verifyStr=?');
-    $st->execute(array($verifyStr));
+    $st = $db->prepare('UPDATE users SET verified=1 WHERE verifyStr=:veristr');
+    $st->bindParam(':veristr', $verifyStr);
+	$st->execute();
     $rowCount = $st->rowCount();//查询影响行
     if($rowCount == 1){
         return true;

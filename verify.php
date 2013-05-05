@@ -41,13 +41,14 @@ if(isset($_POST['emailValue'])){
 if(isset($_POST['user']) && isset($_POST['pass'])){
     $userName = safe($_POST['user']);
     $pwd = safe($_POST['pass']);
-    $st = $db->prepare("SELECT COUNT(access_token) verified /*result_sum*/, access_token FROM users WHERE userName=? AND pwd =?");
-    $st->execute(array($userName,sha1($pwd) ));
-    $st_result = $st->fetchAll();
-	
+	$st = $db->prepare("SELECT COUNT(access_token),verified /*result_sum*/, access_token FROM users WHERE userName=:userName AND pwd =:pwd");
+	$st->bindParam(':userName', $userName);
+	$st->bindParam(':pwd', sha1($pwd));
+	$st->execute();	
+	$st_result = $st->fetchAll();
 	//print_r($st_result);
 	
-    //if($st_result[0]['verified'/*'result_sum'*/] == 1)
+    if($st_result[0]['verified'/*'result_sum'*/] == 1)
 	{
         $data = array("result" => "succeed");
         session_start();
@@ -55,10 +56,10 @@ if(isset($_POST['user']) && isset($_POST['pass'])){
         //在这里读取用户GR授权信息
         $_SESSION['access_token'] = $st_result[0]['access_token'];
     } 
-	/*else
+	else
 	{
    	 	$data = array("result" => "false");
-    }*/
+    }
 	
     echo json_encode($data);
     unset($data);
