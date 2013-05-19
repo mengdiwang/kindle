@@ -1,23 +1,6 @@
 <?php
-class DBCxn{
-    public static $dsn = 'mysql:host=localhost;dbname=webrss';
-    public static $user = 'root';
-    public static $pass = 'root';
-    //保存连接的内部变量
-    private static $db;
-    //不能克隆和技巧化
-    final private function __construct(){}
-    final private function __clone(){}
-    
-    public static function get(){
-        if(is_null(self::$db)){
-            self::$db = new PDO(self::$dsn, self::$user, self::$pass);
-        }
-        //返回连接
-        self::$db->query('set names utf8');
-        return self::$db;
-    }
-}
+include("dbo.php");
+
 $db = DBCxn::get();
 //处理干净字符串
 function safe($str){
@@ -58,18 +41,26 @@ if(isset($_POST['emailValue'])){
 if(isset($_POST['user']) && isset($_POST['pass'])){
     $userName = safe($_POST['user']);
     $pwd = safe($_POST['pass']);
-    $st = $db->prepare("SELECT COUNT(access_token) result_sum, access_token FROM users WHERE userName=? AND pwd =?");
-    $st->execute(array($userName,sha1($pwd) ));
-    $st_result = $st->fetchAll();
-    if($st_result[0]['result_sum'] == 1){
+	$st = $db->prepare("SELECT COUNT(access_token),verified /*result_sum*/, access_token FROM users WHERE userName=:userName AND pwd =:pwd");
+	$st->bindParam(':userName', $userName);
+	$st->bindParam(':pwd', sha1($pwd));
+	$st->execute();	
+	$st_result = $st->fetchAll();
+	//print_r($st_result);
+	
+    if($st_result[0]['verified'/*'result_sum'*/] == 1)
+	{
         $data = array("result" => "succeed");
         session_start();
         $_SESSION['user'] = $userName;
         //在这里读取用户GR授权信息
         $_SESSION['access_token'] = $st_result[0]['access_token'];
-    } else{
-        $data = array("result" => "false");
+    } 
+	else
+	{
+   	 	$data = array("result" => "false");
     }
+	
     echo json_encode($data);
     unset($data);
 }

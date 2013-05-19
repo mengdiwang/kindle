@@ -240,7 +240,7 @@ $("#email2").blur(function(){
 $("#password2").blur(function(){
     var inputValue = $(this).val();
     
-    if(inputValue.length > 6){
+    if(inputValue.length >= 6){
         $("#password2").next().removeClass();
         $("#password2").next().addClass("accept");
         $("#password2").next().text("可用");
@@ -279,11 +279,16 @@ $("#submit1").click(function(){
         shake("password");
         return false;
     }
-    $.post("verify.php",{user:user,pass:pass},function(html){  
+    $.post("verify.php",{user:user,pass:pass},function(html)
+	{  
         var result = html.result;
-        if(result == "succeed"){
+		alert(result);
+        if(result == "succeed")
+		{
             location='web.php';
-        } else{
+        } 
+		else
+		{
             var pass = $("#password").val("");
             shake("password");
         }

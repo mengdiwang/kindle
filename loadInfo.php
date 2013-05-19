@@ -5,32 +5,13 @@ if(isset($_SESSION['user'])){
 }else{
     header('Location: index.php');
 }
-require './lib/simplepie/simplepie.inc';
-
-class DBCxn{
-    public static $dsn = 'mysql:host=localhost;dbname=webrss';
-    public static $user = 'root';
-    public static $pass = 'root';
-    //保存连接的内部变量
-    private static $db;
-    //不能克隆和技巧化
-    final private function __construct(){}
-    final private function __clone(){}
-    
-    public static function get(){
-        if(is_null(self::$db)){
-            self::$db = new PDO(self::$dsn, self::$user, self::$pass);
-        }
-        //返回连接
-        self::$db->query('set names utf8');
-        return self::$db;
-    }
-}
+require './lib/simplepie/SimplePie.compiled.php';
+include("dbo.php");
 
 $db = DBCxn::get();
 
 //初使化订阅
-function initRss($rssLink, $user){
+function initRss($rssLink, $user){ //TODO:Unit test of this
     $db = DBCxn::get();
        
     //构建对象
@@ -46,18 +27,23 @@ function initRss($rssLink, $user){
     }
     $blogName = $feed->get_title();
     $blogLink = $feed->get_link();
-        
-    $selectOneRSS = $db->prepare("SELECT id FROM rss WHERE blogLink = ?");
-    $selectOneRSS->execute(array($blogLink));
+	
+	if($blogLink == null)
+		return "error";
+	
+	$selectOneRSS = $db->prepare("SELECT id FROM rss WHERE blogLink =:bloglink");
+	$selectOneRSS->bindParam(':bloglink', $blogLink);
+    $ret = $selectOneRSS->execute();
     $blogLinkId = $selectOneRSS->fetchColumn();//此RSS在数据库表中id
 
-
-    
     //检查是否存在，如果不存在添加此feed
     if( $blogLinkId > 0 ){//echo "此订阅源已经存在！";
         //检查用户是否已经订阅
-        $checkSub = $db->prepare("SELECT count(*) FROM readinfo WHERE userName = ? AND rssId = ?");
-        $checkSub->execute(array($user, $blogLinkId));
+        $checkSub = $db->prepare("SELECT count(*) FROM readinfo WHERE userName = :user AND rssId = :rssid");
+		$checkSub->bindParam(':user', $user);
+		$checkSub->bindParam(':rssid', $blogLinkId);
+        $checkSub->execute();
+		
         $boolCheckSub = $checkSub->fetchColumn();
         if($boolCheckSub != 1){//用户没有订阅
             $insertReadInfo = $db->prepare("INSERT INTO readinfo(userName,rssId) VALUES(:user,:blogLinkId)");
@@ -71,19 +57,25 @@ function initRss($rssLink, $user){
             //"此源已经存在，你之前已经订阅";
             return "succeed2";
         }        
-    } else{
-        $sql = "INSERT INTO rss(blogName,blogLink,rssLink,updateMd5) VALUES(:blogName,:blogLink,:rssLink,:updateMd5)";
+    } else{		
+		$updateMd5 = md5("123456");
+        
+		//echo "$blogName, $blogLink, $rssLink, $updateMd5 <br/>";
+		
+		$sql = "INSERT INTO rss(blogName,blogLink,rssLink,updateMd5) VALUES(:blogName,:blogLink,:rssLink,:updateMd5)";
         $insertRSS = $db->prepare($sql);
         $insertRSS->bindParam(':blogName',$blogName);
         $insertRSS->bindParam(':blogLink',$blogLink);
         $insertRSS->bindParam(':rssLink',$rssLink);
         $insertRSS->bindParam(':updateMd5',$updateMd5);
-        $updateMd5 = md5("123456");
-        $insertRSS->execute();
+        $count=$insertRSS->execute();
+		
+		//echo $count."has inserted";
         
-        //查询该源的ID
-        $selectOneRSS = $db->prepare("SELECT id FROM rss WHERE blogLink = ?");
-        $selectOneRSS->execute(array($blogLink));
+		//查询该源的ID
+        $selectOneRSS = $db->prepare("SELECT id FROM rss WHERE blogLink =:blogLink");
+        $selectOneRSS->bindParam(':blogLink', $blogLink);
+		$selectOneRSS->execute();
         $blogLinkId = $selectOneRSS->fetchColumn();
         //订阅此源
         //$db->exec("INSERT INTO readinfo(userName,rssId) VALUES ($user, $blogLinkId)");
@@ -107,18 +99,20 @@ if(isset($_POST['feed'])){
 
 
 //以下是所有文章列表
-$selectReadInfo = $db->prepare("SELECT DISTINCT readInfo FROM readinfo WHERE userName = ?");
-$selectReadInfo->execute(array($user));
+$selectReadInfo = $db->prepare("SELECT DISTINCT readInfo FROM readinfo WHERE userName = :userName");
+$selectReadInfo->bindParam(':userName', $user);
+$selectReadInfo->execute();
 $readInfo = unserialize($selectReadInfo->fetchColumn());
 
 @$loadType = strval($_POST['loadType']);
 if($loadType == 'titleList'){
     $page = intval($_POST['page']);
     $start = ($page+1) * 20;
-    $sql_1 = "SELECT * FROM articles WHERE rssId IN(SELECT DISTINCT rssId FROM readinfo WHERE userName=?) ORDER BY pubDate DESC, id LIMIT $start, 20";
+    $sql_1 = "SELECT * FROM articles WHERE rssId IN(SELECT DISTINCT rssId FROM readinfo WHERE userName=:userName) ORDER BY pubDate DESC, id LIMIT $start, 20";
     //语句有问题，传送start值会不显示数据
     $st1 = $db->prepare($sql_1);
-    $st1->execute(array($user));
+	$st1->bindParam(':userName', $user);
+    $st1->execute();
     //显示文章列表
     foreach($st1->fetchAll() as $row ){
         if(isset($readInfo[$row['id']])){//查询是否已读
@@ -133,9 +127,10 @@ if($loadType == 'titleList'){
 if(isset($_POST['curRssId'])){
     $curRssId= $_POST['curRssId'];
     $curRssId= substr($curRssId,4);
-    $sql_2 = "SELECT * FROM articles WHERE rssId= ? ORDER BY pubDate DESC, id";
+    $sql_2 = "SELECT * FROM articles WHERE rssId= :rssid ORDER BY pubDate DESC, id";
     $st2 = $db->prepare($sql_2);
-    $st2->execute(array($curRssId));
+	$st2->bindParam(':rssid',$curRssId);
+    $st2->execute();
     //显示文章列表
     foreach($st2->fetchAll() as $row ){
         if(isset($readInfo[$row['id']])){//查询是否已读
@@ -168,8 +163,10 @@ if(isset($_POST['id'])){
     if($readed != "readed"){
         $readInfo[$id] = "readed";
         $newReadInfo = serialize($readInfo);
-        $st2 = $db->prepare('UPDATE readinfo SET readInfo = ? WHERE userName =?');
-        $st2->execute(array($newReadInfo, $user));
+        $st2 = $db->prepare('UPDATE readinfo SET readInfo = :readInfo WHERE userName =:user');
+		$st2->bindParam(':readInfo', $newReadInfo);
+		$st2->bindParam(':user', $user);
+        $st2->execute();
     }
     echo json_encode($data);
 }
@@ -178,8 +175,10 @@ if(isset($_POST['id'])){
 if(isset($_POST['rssId'])){
     $rssId = $_POST['rssId'];
     $rssId = substr($rssId,4);
-    $cancelRSS = $db->prepare('DELETE FROM readinfo WHERE userName=? AND rssId=?');
-    if( $cancelRSS->execute(array($user, $rssId)) ){
+    $cancelRSS = $db->prepare('DELETE FROM readinfo WHERE userName=:user AND rssId=:rssid');
+	$cancelRSS->bindParam(':user',$user);
+	$cancelRSS->bindParam(':rssid', $rssId);
+    if( $cancelRSS->execute() ){
         $data['result'] = "succeed";
     } else{
         $data['result'] = "error";
@@ -191,12 +190,14 @@ if(isset($_POST['rssId'])){
 if(isset($_POST['allId'])){
     $allId = $_POST['allId'];
     $allId = explode("all-", $allId); 
-    $st2 = $db->prepare('UPDATE readinfo SET readInfo = ? WHERE userName =?');
+    $st2 = $db->prepare('UPDATE readinfo SET readInfo = :readinfo WHERE userName =:user');
     foreach($allId as $Id){
         $readInfo[$Id] = "readed";
     }
     $newReadInfo = serialize($readInfo);
-    if( $st2->execute(array($newReadInfo, $user)) ){
+	$st2->bindParam(':readinfo', $newReadInfo);
+	$st2->bindParam(':user', $user);
+    if( $st2->execute() ){
         $data['result'] = "succeed";
     } else{
         $data['result'] = "error";

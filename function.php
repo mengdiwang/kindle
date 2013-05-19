@@ -1,28 +1,9 @@
 <?php
 //加载RSS解析文件
-require './lib/simplepie/simplepie.inc';
+require './lib/simplepie/SimplePie.compiled.php';
 set_time_limit(300);
+include("dbo.php");
 
-//数据库连接
-class DBCxn{
-    public static $dsn = 'mysql:host=localhost;dbname=webrss';
-    public static $user = 'root';
-    public static $pass = 'root';
-    //保存连接的内部变量
-    private static $db;
-    //不能克隆和技巧化
-    final private function __construct(){}
-    final private function __clone(){}
-    
-    public static function get(){
-        if(is_null(self::$db)){
-            self::$db = new PDO(self::$dsn, self::$user, self::$pass);
-        }
-        //返回连接
-        self::$db->query('set names utf8');
-        return self::$db;
-    }
-}
 //建立的数据连接说明
 //$insertArticles 是用来获取源中的文章并插入到Articles数据表中的
 //$updateMd5 是用来更新指定id的博客md5值
@@ -56,15 +37,19 @@ function readRSS($rssId,$updateMd5,$feed){
         }            
         //检测确保不会重复收录,并且更新MD5
         if($updateMd5 == md5($titleUrl)){
-            $updateMd5 = $db->prepare('Update rss SET updateMd5=? WHERE id=?');
-            $updateMd5->execute(array($newUpdateMd5, $rssId));
+            $updateMd5 = $db->prepare('Update rss SET updateMd5=:md5 WHERE id=:id');
+			$updateMd5->bindParam(':md5', $newUpdateMd5);
+			$updateMd5->bindParam(':id', $rssId);
+            $updateMd5->execute();
             break;
         }
         
         //读到最后一条记录也要更新MD5
         if($temp == $items_length){
-            $updateMd5 = $db->prepare('Update rss SET updateMd5=? WHERE id=?');
-            $updateMd5->execute(array($newUpdateMd5, $rssId));
+            $updateMd5 = $db->prepare('Update rss SET updateMd5=:md5 WHERE id=:id');
+			$updateMd5->bindParam(':md5', $newUpdateMd5);
+			$updateMd5->bindParam(':id', $rssId);
+			$updateMd5->execute();
         }
         
         $title = $item->get_title();//文章标题

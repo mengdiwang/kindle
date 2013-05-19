@@ -1,10 +1,16 @@
 <?php
+
 session_start();
 if(isset($_SESSION['user'])){
     $user = $_SESSION['user'];
 } else{
     header('Location: index.php');
 }
+
+
+include 'function.php';
+
+updateRSS();
 ?>
 <!DOCTYPE HTML>
 <html lang="en-US">
@@ -374,6 +380,7 @@ article,aside,dialog,footer,header,section,footer,nav,menu{display:block}
 <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
 <![endif]–>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+
 <script type="text/javascript">
 $(function(){ 
 //边框大小
@@ -536,6 +543,7 @@ $("#addRSS input").blur(function(){
 $("#addRSS button").bind("click",function(){
     setDeleteSize();//设置delete元素大小
     var feed =$("#addRSS input").val();
+	//alert(feed);
     if(feed.length < 6){
         alert("订阅源地址不合法");
         return false;
@@ -543,7 +551,7 @@ $("#addRSS button").bind("click",function(){
     $("div#loading p").text("正在检测RSS源……");
     $("div#delete").css("display","block");
     $("div#loading").css("display","block");
-    $.post("loadInfo.php",{feed:feed},function(html){
+    $.post("loadInfo.php",{feed:feed},function(html){//TODO
         var result = html.result;
         if(result == "error" ){
             $("div#loading p").css("color","red");
@@ -679,25 +687,7 @@ $("#allReaded").click(function(){
         <nav class="list">
             <ul>
 <?php
-class DBCxn{
-    public static $dsn = 'mysql:host=localhost;dbname=webrss';
-    public static $user = 'root';
-    public static $pass = 'root';
-    //保存连接的内部变量
-    private static $db;
-    //不能克隆和技巧化
-    final private function __construct(){}
-    final private function __clone(){}
-    
-    public static function get(){
-        if(is_null(self::$db)){
-            self::$db = new PDO(self::$dsn, self::$user, self::$pass);
-        }
-        //返回连接
-        self::$db->query('set names utf8');
-        return self::$db;
-    }
-}
+//include 'dbo.php';
 
 $db = DBCxn::get();
 
